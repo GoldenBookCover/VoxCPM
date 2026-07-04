@@ -20,10 +20,9 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "torch>=2.5.0",
     "torchaudio>=2.5.0",
@@ -72,6 +71,9 @@ Repository = "https://github.com/OpenBMB/VoxCPM.git"
 Documentation = "https://github.com/OpenBMB/VoxCPM#readme"
 "Bug Tracker" = "https://github.com/OpenBMB/VoxCPM/issues"
 
+[tool.uv]
+override-dependencies = ["soundfile>=0.14.0"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["voxcpm*"]
@@ -84,7 +86,7 @@ version_scheme = "post-release"
 
 [tool.black]
 line-length = 120
-target-version = ['py310']
+target-version = ['py311']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
