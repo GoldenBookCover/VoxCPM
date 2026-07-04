@@ -47,8 +47,8 @@ dependencies = [
     "funasr",
     "spaces",
     "argbind",
-    "safetensors"
-
+    "safetensors",
+    "clearvoice",
 ]
 
 [project.optional-dependencies]

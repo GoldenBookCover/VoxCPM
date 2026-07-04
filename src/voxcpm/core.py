@@ -15,7 +15,7 @@ class VoxCPM:
     def __init__(
         self,
         voxcpm_model_path: str,
-        zipenhancer_model_path: str | None = "iic/speech_zipenhancer_ans_multiloss_16k_base",
+        zipenhancer_model_path: str | None = "MossFormerGAN_SE_16K",
         enable_denoiser: bool = True,
         optimize: bool = True,
         device: str | None = None,
@@ -108,7 +108,7 @@ class VoxCPM:
         cls,
         hf_model_id: str = "openbmb/VoxCPM2",
         load_denoiser: bool = True,
-        zipenhancer_model_id: str = "iic/speech_zipenhancer_ans_multiloss_16k_base",
+        zipenhancer_model_id: str = "MossFormerGAN_SE_16K",
         cache_dir: str = None,
         local_files_only: bool = False,
         optimize: bool = True,

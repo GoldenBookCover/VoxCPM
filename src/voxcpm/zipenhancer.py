@@ -9,21 +9,23 @@ import os
 import tempfile
 from typing import Optional
 import torchaudio
-from modelscope.pipelines import pipeline
-from modelscope.utils.constant import Tasks
+# from modelscope.pipelines import pipeline
+# from modelscope.utils.constant import Tasks
+from clearvoice import ClearVoice
 
 
 class ZipEnhancer:
     """ZipEnhancer Audio Denoising Enhancer"""
 
-    def __init__(self, model_path: str = "iic/speech_zipenhancer_ans_multiloss_16k_base"):
+    def __init__(self, model_path: str='MossFormerGAN_SE_16K'):
         """
-        Initialize ZipEnhancer
+        Initialize Enhancer
         Args:
-            model_path: ModelScope model path or local path
+            model_path: Model path or local path
         """
         self.model_path = model_path
-        self._pipeline = pipeline(Tasks.acoustic_noise_suppression, model=self.model_path)
+        # self._pipeline = pipeline(Tasks.acoustic_noise_suppression, model=self.model_path)
+        self._engine = ClearVoice(task='speech_enhancement', model_names=[model_path])
 
     def _normalize_loudness(self, wav_path: str):
         """
@@ -57,7 +59,8 @@ class ZipEnhancer:
                 output_path = tmp_file.name
         try:
             # Perform denoising processing
-            self._pipeline(input_path, output_path=output_path)
+            output_wav = self._engine(input_path=input_path, online_write=False)
+            self._engine.write(output_wav, output_path=output_path)
             # Loudness normalization
             if normalize_loudness:
                 self._normalize_loudness(output_path)
