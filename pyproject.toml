@@ -42,7 +42,6 @@ dependencies = [
     "soundfile",
     "librosa",
     "matplotlib",
-    "funasr",
     "spaces",
     "argbind",
     "safetensors",
