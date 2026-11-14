@@ -9,8 +9,6 @@ import os
 import tempfile
 from typing import Optional
 import torchaudio
-# from modelscope.pipelines import pipeline
-# from modelscope.utils.constant import Tasks
 from clearvoice import ClearVoice
 
 
@@ -24,7 +22,6 @@ class ZipEnhancer:
             model_path: Model path or local path
         """
         self.model_path = model_path
-        # self._pipeline = pipeline(Tasks.acoustic_noise_suppression, model=self.model_path)
         self._engine = ClearVoice(task='speech_enhancement', model_names=[model_path])
 
     def _normalize_loudness(self, wav_path: str):

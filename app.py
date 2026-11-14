@@ -6,13 +6,13 @@ import random
 import numpy as np
 import gradio as gr
 from typing import Optional, Tuple
-from funasr import AutoModel
 from pathlib import Path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import voxcpm
 from voxcpm.model.utils import resolve_runtime_device
+from voxcpm.asr import ASRModel
 
 logging.basicConfig(
     level=logging.INFO,
@@ -230,9 +230,9 @@ class VoxCPMDemo:
         logger.info(f"Running VoxCPM on device: {self.device}")
         self.optimize = self.device.startswith("cuda")
 
-        self.asr_model_id = "iic/SenseVoiceSmall"
+        self.asr_model_id = None  # defaults to voxcpm.asr.DEFAULT_ASR_MODEL
         self.asr_device = "cuda:0" if self.device.startswith("cuda") else "cpu"
-        self.asr_model: Optional[AutoModel] = None
+        self.asr_model: Optional[ASRModel] = None
 
         self.voxcpm_model: Optional[voxcpm.VoxCPM] = None
         self._model_id = model_id
@@ -249,28 +249,18 @@ class VoxCPMDemo:
         logger.info("Model loaded successfully.")
         return self.voxcpm_model
 
-    def get_or_load_asr_model(self) -> AutoModel:
+    def get_or_load_asr_model(self) -> ASRModel:
         if self.asr_model is not None:
             return self.asr_model
         logger.info(f"Loading ASR model: {self.asr_model_id} on device: {self.asr_device}")
-        self.asr_model = AutoModel(
-            model=self.asr_model_id,
-            disable_update=True,
-            log_level="DEBUG",
-            device=self.asr_device,
-        )
+        self.asr_model = ASRModel(self.asr_model_id, device=self.asr_device)
         logger.info("ASR model loaded successfully.")
         return self.asr_model
 
     def prompt_wav_recognition(self, prompt_wav: Optional[str]) -> str:
         if prompt_wav is None:
             return ""
-        res = self.get_or_load_asr_model().generate(
-            input=prompt_wav,
-            language="auto",
-            use_itn=True,
-        )
-        return res[0]["text"].split("|>")[-1]
+        return self.get_or_load_asr_model().transcribe(prompt_wav)
 
     def _build_generate_kwargs(
         self,

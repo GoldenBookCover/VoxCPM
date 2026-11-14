@@ -22,7 +22,7 @@ default_pretrained_path = str(_v2_path if _v2_path.exists() else _v15_path)
 from voxcpm.core import VoxCPM
 from voxcpm.model.voxcpm import LoRAConfig
 import numpy as np
-from funasr import AutoModel
+from voxcpm.asr import ASRModel
 
 # --- Localization ---
 LANG_DICT = {
@@ -92,7 +92,7 @@ LANG_DICT = {
 
 # Global variables
 current_model: Optional[VoxCPM] = None
-asr_model: Optional[AutoModel] = None
+asr_model: Optional[ASRModel] = None
 training_process: Optional[subprocess.Popen] = None
 training_log = ""
 
@@ -122,14 +122,9 @@ def detect_sample_rate(pretrained_path: str) -> Optional[int]:
 def get_or_load_asr_model():
     global asr_model
     if asr_model is None:
-        print("Loading ASR model (SenseVoiceSmall)...", file=sys.stderr)
+        print("Loading ASR model (Whisper)...", file=sys.stderr)
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        asr_model = AutoModel(
-            model="iic/SenseVoiceSmall",
-            disable_update=True,
-            log_level="ERROR",
-            device=device,
-        )
+        asr_model = ASRModel(device=device)
     return asr_model
 
 
@@ -138,9 +133,7 @@ def recognize_audio(audio_path):
         return ""
     try:
         model = get_or_load_asr_model()
-        res = model.generate(input=audio_path, language="auto", use_itn=True)
-        text = res[0]["text"].split("|>")[-1]
-        return text
+        return model.transcribe(audio_path)
     except Exception as e:
         print(f"ASR Error: {e}", file=sys.stderr)
         return ""

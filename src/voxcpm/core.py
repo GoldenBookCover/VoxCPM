@@ -28,8 +28,8 @@ class VoxCPM:
             voxcpm_model_path: Local filesystem path to the VoxCPM model assets
                 (weights, configs, etc.). Typically the directory returned by
                 a prior download step.
-            zipenhancer_model_path: ModelScope acoustic noise suppression model
-                id or local path. If None, denoiser will not be initialized.
+            zipenhancer_model_path: ClearVoice speech enhancement model
+                name or local path. If None, denoiser will not be initialized.
             enable_denoiser: Whether to initialize the denoiser pipeline.
             optimize: Whether to optimize the model with torch.compile. True by default, but can be disabled for debugging.
             device: Runtime device. If set to ``None`` or ``"auto"``, VoxCPM
@@ -123,8 +123,8 @@ class VoxCPM:
             hf_model_id: Explicit Hugging Face repository id (e.g. "org/repo") or local path.
             load_denoiser: Whether to initialize the denoiser pipeline.
             optimize: Whether to optimize the model with torch.compile. True by default, but can be disabled for debugging.
-            zipenhancer_model_id: Denoiser model id or path for ModelScope
-                acoustic noise suppression.
+            zipenhancer_model_id: ClearVoice speech enhancement model name
+                or local path used for denoising.
             cache_dir: Custom cache directory for the snapshot.
             local_files_only: If True, only use local files and do not attempt
                 to download.
