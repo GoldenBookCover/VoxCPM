@@ -4,7 +4,6 @@ import numpy as np
 import torch
 import gradio as gr
 from typing import Optional, Tuple
-from funasr import AutoModel
 from pathlib import Path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -12,6 +11,7 @@ if os.environ.get("HF_REPO_ID", "").strip() == "":
     os.environ["HF_REPO_ID"] = "openbmb/VoxCPM1.5"
 
 import voxcpm
+from voxcpm.asr import ASRModel
 
 
 class VoxCPMDemo:
@@ -20,11 +20,7 @@ class VoxCPMDemo:
         print(f"🚀 Running on device: {self.device}", file=sys.stderr)
 
         # ASR model for prompt text recognition
-        self.asr_model_id = "iic/SenseVoiceSmall"
-        self.asr_model: Optional[AutoModel] = AutoModel(
-            model=self.asr_model_id,
-            disable_update=True,
-            log_level="DEBUG",
+        self.asr_model: Optional[ASRModel] = ASRModel(
             device="cuda:0" if self.device == "cuda" else "cpu",
         )
 
@@ -73,9 +69,7 @@ class VoxCPMDemo:
     def prompt_wav_recognition(self, prompt_wav: Optional[str]) -> str:
         if prompt_wav is None:
             return ""
-        res = self.asr_model.generate(input=prompt_wav, language="auto", use_itn=True)
-        text = res[0]["text"].split("|>")[-1]
-        return text
+        return self.asr_model.transcribe(prompt_wav)
 
     def generate_tts_audio(
         self,

@@ -9,7 +9,6 @@
   <a href="https://huggingface.co/spaces/OpenBMB/VoxCPM-Demo"><img src="https://img.shields.io/badge/Live%20Playground-Demo-orange" alt="Live Playground"></a>
   <a href="https://voxcpm.readthedocs.io/zh-cn/latest/"><img src="https://img.shields.io/badge/Docs-ReadTheDocs-8CA1AF" alt="Documentation"></a>
   <a href="https://huggingface.co/openbmb/VoxCPM2"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-VoxCPM2-yellow" alt="Hugging Face"></a>
-  <a href="https://modelscope.cn/models/OpenBMB/VoxCPM2"><img src="https://img.shields.io/badge/ModelScope-VoxCPM2-purple" alt="ModelScope"></a>
   <a href="https://openbmb.github.io/voxcpm2-demopage/"><img src="https://img.shields.io/badge/DemoPage-Audio Samples-red" alt="DemoPage"></a>
   
 </p>
@@ -25,10 +24,6 @@
 <p align="center">
   👋 欢迎加入社区，参与讨论与交流！
   <br>
-  <a href="./assets/feishu-group.png" style="display:inline-block;vertical-align:middle; margin-left: 10px;">
-    <img src="./assets/feishu-logo.png" width="16" height="16" style="vertical-align:middle;"> 飞书群
-  </a>
-  &nbsp;|&nbsp;
   <a href="https://discord.gg/KZUx7tVNwz" style="display:inline-block;vertical-align:middle;">
     <img src="./assets/discord-logo.png" width="16" height="16" style="vertical-align:middle;"> Discord
   </a>
@@ -58,7 +53,7 @@ VoxCPM 是一个**无离散音频分词器**（Tokenizer-Free）的语音合成�
 
 ### 最新动态
 
-* **[2026.04]** 🔥 发布 **VoxCPM2** — 20亿参数，30种语言，音色设计与可控声音克隆，48kHz 音频输出！[模型权重](https://huggingface.co/openbmb/VoxCPM2) | [使用文档](https://voxcpm.readthedocs.io/zh-cn/latest/) | [在线体验](https://huggingface.co/spaces/OpenBMB/VoxCPM-Demo) | [官网体验](https://voxcpm.modelbest.cn/) (适用国内访问) | [技术报告](https://arxiv.org/abs/2606.06928)
+* **[2026.04]** 🔥 发布 **VoxCPM2** — 20亿参数，30种语言，音色设计与可控声音克隆，48kHz 音频输出！[模型权重](https://huggingface.co/openbmb/VoxCPM2) | [使用文档](https://voxcpm.readthedocs.io/zh-cn/latest/) | [在线体验](https://huggingface.co/spaces/OpenBMB/VoxCPM-Demo) | [技术报告](https://arxiv.org/abs/2606.06928)
 * **[2025.12]** 🎉 开源 **VoxCPM1.5** [模型权重](https://huggingface.co/openbmb/VoxCPM1.5)，支持 SFT 和 LoRA 微调。(**🏆 GitHub Trending #1**)
 * **[2025.09]** 🔥 发布 VoxCPM [技术报告](https://arxiv.org/abs/2509.24650)。
 * **[2025.09]** 🎉 开源 **VoxCPM-0.5B** [模型权重](https://huggingface.co/openbmb/VoxCPM-0.5B) (**🏆 HuggingFace Trending #1**)
@@ -117,15 +112,11 @@ sf.write("demo.wav", wav, model.tts_model.sample_rate)
 print("已保存: demo.wav")
 ```
 
-如果你希望先从 ModelScope 下载模型到本地（适用于国内网络访问），可以使用：
-
-```bash
-pip install modelscope
-```
+如果你希望先把模型下载到本地目录，可以使用：
 
 ```python
-from modelscope import snapshot_download
-snapshot_download("OpenBMB/VoxCPM2", local_dir='./pretrained_models/VoxCPM2') # 指定模型保存的本地路径
+from huggingface_hub import snapshot_download
+snapshot_download("openbmb/VoxCPM2", local_dir='./pretrained_models/VoxCPM2') # 指定模型保存的本地路径
 
 from voxcpm import VoxCPM
 import soundfile as sf
@@ -322,7 +313,7 @@ curl http://localhost:8000/v1/audio/speech \
 
 如需在端侧/消费级硬件上无 Python 运行，使用 **[llama.cpp-omni](https://github.com/tc-mb/llama.cpp-omni)** — 基于 llama.cpp 的高性能 C++ 推理引擎，原生支持 VoxCPM2 GGUF，可在 **CPU / Metal / CUDA / Vulkan** 上运行。
 
-**1. 下载 GGUF 权重**：从 [HF下载](https://huggingface.co/DennisHuang648/VoxCPM2-GGUF) | [ModelScope](https://modelscope.cn/models/DennisHuang/VoxCPM2-GGUF)，需要一个 **BaseLM**（F16 或 Q8_0）+ **Acoustic** 文件。Q8_0 体积减半，质量损失可忽略。
+**1. 下载 GGUF 权重**：从 [HF下载](https://huggingface.co/DennisHuang648/VoxCPM2-GGUF)，需要一个 **BaseLM**（F16 或 Q8_0）+ **Acoustic** 文件。Q8_0 体积减半，质量损失可忽略。
 
 **2. 编译**
 
@@ -375,7 +366,7 @@ cmake --build build --target voxcpm2-cli -j
 | **RTF (RTX 4090)** | ~0.30 | ~0.15 | ~0.17 |
 | **RTF Nano-VLLM (RTX 4090)** | ~0.13 | ~0.08 | ~0.10 |
 | **显存占用** | ~8 GB | ~6 GB | ~5 GB |
-| **模型权重** | [🤗 HF](https://huggingface.co/openbmb/VoxCPM2) / [MS](https://modelscope.cn/models/OpenBMB/VoxCPM2) | [🤗 HF](https://huggingface.co/openbmb/VoxCPM1.5) / [MS](https://modelscope.cn/models/OpenBMB/VoxCPM1.5) | [🤗 HF](https://huggingface.co/openbmb/VoxCPM-0.5B) / [MS](https://modelscope.cn/models/OpenBMB/VoxCPM-0.5B) |
+| **模型权重** | [🤗 HF](https://huggingface.co/openbmb/VoxCPM2) | [🤗 HF](https://huggingface.co/openbmb/VoxCPM1.5) | [🤗 HF](https://huggingface.co/openbmb/VoxCPM-0.5B) |
 | **技术报告** | [arXiv](https://arxiv.org/abs/2606.06928) | — | [arXiv](https://arxiv.org/abs/2509.24650) [ICLR 2026](https://openreview.net/forum?id=h5KLpGoqzC) |
 | **Demo 页面** | [音频示例](https://openbmb.github.io/voxcpm2-demopage) | — | [音频示例](https://openbmb.github.io/VoxCPM-demopage) |
 
@@ -674,7 +665,7 @@ VoxCPM 模型权重和代码基于 [Apache-2.0](LICENSE) 协议开源。
 ## 机构
 
 <p>
-  <a href="https://modelbest.cn/"><img src="assets/modelbest_logo.png" width="28px"> 面壁智能</a>
+  <img src="assets/modelbest_logo.png" width="28px"> 面壁智能
   &nbsp;&nbsp;&nbsp;
   <a href="https://github.com/thuhcsi"><img src="assets/thuhcsi_logo.png" width="28px"> 清华大学人机交互实验室</a>
 </p>
