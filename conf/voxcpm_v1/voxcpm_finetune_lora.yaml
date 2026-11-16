@@ -14,6 +14,8 @@ weight_decay: 0.01
 warmup_steps: 100
 max_steps: 2000
 max_batch_tokens: 8192  # Example: single batch can have at most 16k tokens, with batch_size=4, each sample can have at most 4096 tokens
+gradient_checkpointing: true  # recompute layers in backward: much less activation memory, ~20-30% slower
+lora_frozen_bf16: true        # LoRA only: keep frozen base weights in bf16 instead of fp32
 save_path: /path/to/checkpoints/finetune_lora
 tensorboard: /path/to/logs/finetune_lora
 lambdas:

@@ -32,6 +32,7 @@ import json
 from voxcpm.model import VoxCPMModel, VoxCPM2Model
 from voxcpm.model.voxcpm import LoRAConfig as LoRAConfigV1
 from voxcpm.model.voxcpm2 import LoRAConfig as LoRAConfigV2
+from voxcpm.model.utils import get_dtype
 from voxcpm.training import (
     Accelerator,
     BatchProcessor,
@@ -66,6 +67,8 @@ def train(
     lora: dict = None,
     config_path: str = "",
     max_grad_norm: float = 0.0,  # gradient clipping; 0 = disabled (backward compat)
+    gradient_checkpointing: bool = True,  # recompute transformer layers in backward to save activation memory
+    lora_frozen_bf16: bool = True,  # LoRA only: store frozen base weights in the model dtype (bf16) instead of fp32
     # Distribution options (for LoRA checkpoints)
     hf_model_id: str = "",  # HuggingFace model ID (e.g., "openbmb/VoxCPM1.5")
     distribute: bool = False,  # If True, save hf_model_id as base_model; otherwise save pretrained_path
@@ -101,6 +104,15 @@ def train(
         pretrained_path, optimize=False, training=True, lora_config=LoRAConfig(**lora) if lora else None
     )
     tokenizer = base_model.text_tokenizer
+
+    if lora and lora_frozen_bf16:
+        n_cast = cast_frozen_params(base_model, get_dtype(base_model.config.dtype))
+        if accelerator.rank == 0:
+            print(f"Cast {n_cast / 1e6:.1f}M frozen params to {base_model.config.dtype}", file=sys.stderr)
+    if gradient_checkpointing:
+        n_ckpt = enable_gradient_checkpointing(base_model)
+        if accelerator.rank == 0:
+            print(f"Gradient checkpointing enabled on {n_ckpt} transformer stacks", file=sys.stderr)
 
     expected_sr = base_model.audio_vae.sample_rate
     assert sample_rate == expected_sr, (
@@ -656,6 +668,48 @@ def generate_sample_audio(
                     unwrapped_model.eval()
             except Exception as e:
                 log(f"[Warning] Failed to restore model state: {e}")
+
+
+def cast_frozen_params(model: torch.nn.Module, dtype: torch.dtype) -> int:
+    """
+    Store frozen (requires_grad=False) weights in a low-precision dtype.
+
+    Under autocast these weights are cast to bf16 on every forward anyway, so keeping
+    an fp32 master copy only costs memory. Trainable (LoRA) params stay fp32 so the
+    optimizer still updates full-precision weights. The AudioVAE is left untouched.
+    """
+    n = 0
+    for name, param in model.named_parameters():
+        if param.requires_grad or name.startswith("audio_vae.") or param.dtype == dtype:
+            continue
+        if not param.is_floating_point():
+            continue
+        param.data = param.data.to(dtype)
+        n += param.numel()
+    return n
+
+
+def enable_gradient_checkpointing(model: torch.nn.Module) -> int:
+    """
+    Turn on per-layer activation checkpointing for every MiniCPM transformer stack
+    (base_lm, residual_lm, feat_encoder, feat_decoder DiT).
+
+    The DiT is skipped in mean_mode because its loss uses torch.func.jvp, which
+    does not compose with torch.utils.checkpoint.
+    """
+    from voxcpm.modules.minicpm4 import MiniCPMModel
+
+    skip = set()
+    feat_decoder = getattr(model, "feat_decoder", None)
+    if feat_decoder is not None and getattr(feat_decoder, "mean_mode", False):
+        skip = {id(m) for m in feat_decoder.modules()}
+
+    n = 0
+    for module in model.modules():
+        if isinstance(module, MiniCPMModel) and id(module) not in skip:
+            module.gradient_checkpointing = True
+            n += 1
+    return n
 
 
 def load_checkpoint(model, optimizer, scheduler, save_dir: Path, rank: int = 0):

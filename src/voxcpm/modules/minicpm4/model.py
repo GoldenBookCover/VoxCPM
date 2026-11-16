@@ -1,6 +1,7 @@
 from .config import MiniCPM4Config
 import torch
 import torch.nn as nn
+from torch.utils.checkpoint import checkpoint
 from typing import List, Tuple
 import math
 from .cache import StaticKVCache
@@ -351,6 +352,9 @@ class MiniCPMModel(nn.Module):
             self.rope_emb = MiniCPMLongRoPE(config)
 
         self.kv_cache = None
+        # Recompute each decoder layer in backward instead of storing its activations.
+        # Only takes effect in training mode with autograd enabled.
+        self.gradient_checkpointing = False
 
     def forward(
         self,
@@ -374,13 +378,25 @@ class MiniCPMModel(nn.Module):
 
         next_decoder_cache = []
 
-        for decoder_layer in self.layers:
+        use_checkpoint = self.gradient_checkpointing and self.training and torch.is_grad_enabled()
 
-            hidden_states, this_cache = decoder_layer(
-                hidden_states,
-                position_emb,
-                is_causal,
-            )
+        for decoder_layer in self.layers:
+            if use_checkpoint:
+                hidden_states, this_cache = checkpoint(
+                    decoder_layer,
+                    hidden_states,
+                    position_emb,
+                    is_causal,
+                    use_reentrant=False,
+                )
+                # Training callers discard the per-layer KV; don't keep it alive across layers.
+                this_cache = None
+            else:
+                hidden_states, this_cache = decoder_layer(
+                    hidden_states,
+                    position_emb,
+                    is_causal,
+                )
             next_decoder_cache.append(this_cache)
         hidden_states = self.norm(hidden_states)
         return hidden_states, next_decoder_cache

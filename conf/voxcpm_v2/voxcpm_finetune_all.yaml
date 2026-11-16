@@ -15,6 +15,7 @@ weight_decay: 0.01
 warmup_steps: 100
 max_steps: 1000
 max_batch_tokens: 8192
+gradient_checkpointing: true  # recompute layers in backward: much less activation memory, ~20-30% slower
 max_grad_norm: 1.0        # gradient clipping max norm; 0 = disabled
 save_path: /path/to/checkpoints/finetune_all
 tensorboard: /path/to/logs/finetune_all
