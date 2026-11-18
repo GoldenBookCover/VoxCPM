@@ -1,25 +1,26 @@
-pretrained_path: /path/to/VoxCPM2/
-train_manifest: /path/to/train.jsonl
-val_manifest: null
+pretrained_path: pretrain/VoxCPM2/
+train_manifest: data/train.jsonl
+val_manifest: null        # optional: hold out 30-50 clips into e.g. data/val.jsonl and point here
 sample_rate: 16000        # AudioVAE encoder input rate; must match audio_vae_config.sample_rate
 out_sample_rate: 48000    # AudioVAE decoder output rate; used for TensorBoard audio logging
-batch_size: 2
-grad_accum_steps: 8  # effective batch size = batch_size × grad_accum_steps = 16
-num_workers: 8
-num_iters: 1000
+# Tuned for ~1.5h single-speaker data on RTX 5090 (32GB)
+batch_size: 16
+grad_accum_steps: 1  # effective batch size = batch_size × grad_accum_steps = 16
+num_workers: 4
+num_iters: 1000           # ~14 epochs for 1164 clips; docs: single speaker often best within 1-3 epochs (~70-220 steps)
 log_interval: 10
-valid_interval: 500
-save_interval: 500
+valid_interval: 200
+save_interval: 200        # save often, then pick the best checkpoint by listening
 learning_rate: 0.0001
 weight_decay: 0.01
 warmup_steps: 100
-max_steps: 1000
-max_batch_tokens: 8192
+max_steps: 1000           # LR schedule length; keep equal to num_iters
+max_batch_tokens: 8196   # per-sample cap = max_batch_tokens / batch_size = 4096; scale with batch_size
 gradient_checkpointing: true  # recompute layers in backward: much less activation memory, ~20-30% slower
 lora_frozen_bf16: true        # LoRA only: keep frozen base weights in bf16 instead of fp32
 max_grad_norm: 1.0        # gradient clipping max norm; 0 = disabled
-save_path: /path/to/checkpoints/finetune_lora
-tensorboard: /path/to/logs/finetune_lora
+save_path: checkpoints/finetune_lora
+tensorboard: logs/finetune_lora
 lambdas:
   loss/diff: 1.0
   loss/stop: 1.0
@@ -31,7 +32,7 @@ lora:
   enable_proj: false
   r: 32
   alpha: 32
-  dropout: 0.0
+  dropout: 0.0            # docs: keep 0.0 unless overfitting
 
 # Distribution options (optional)
 # - If distribute=false (default): save pretrained_path as base_model in lora_config.json
