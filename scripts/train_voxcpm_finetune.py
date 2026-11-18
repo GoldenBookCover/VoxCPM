@@ -42,6 +42,49 @@ from voxcpm.training import (
 )
 
 
+# Folder name (lower-case) -> HuggingFace repo, used when hf_model_id is not set
+_KNOWN_REPOS = {
+    "voxcpm2": "openbmb/VoxCPM2",
+    "voxcpm1.5": "openbmb/VoxCPM1.5",
+    "voxcpm-0.5b": "openbmb/VoxCPM-0.5B",
+}
+
+
+def _pretrained_complete(path: Path) -> bool:
+    return (path / "config.json").is_file() and (
+        (path / "audiovae.safetensors").is_file() or (path / "audiovae.pth").is_file()
+    )
+
+
+def ensure_pretrained(pretrained_path: str, hf_model_id: str = "") -> None:
+    """Download the model into pretrained_path from HuggingFace if it is missing or incomplete.
+
+    The repo is hf_model_id if given, otherwise inferred from the folder name
+    (e.g. pretrain/VoxCPM2/ -> openbmb/VoxCPM2). Already-downloaded files are skipped,
+    so an interrupted download resumes on the next run. Set HF_ENDPOINT to use a mirror.
+    """
+    path = Path(pretrained_path)
+    if _pretrained_complete(path):
+        return
+
+    repo_id = hf_model_id or _KNOWN_REPOS.get(path.name.lower())
+    if not repo_id:
+        raise FileNotFoundError(
+            f"Pretrained model not found at '{pretrained_path}' and the HuggingFace repo cannot be inferred "
+            f"from the folder name. Set hf_model_id in the config (e.g. \"openbmb/VoxCPM2\") "
+            f"or download the model manually."
+        )
+
+    from huggingface_hub import snapshot_download
+
+    print(f"Pretrained model not found or incomplete at '{path}', downloading {repo_id} ...", file=sys.stderr)
+    path.mkdir(parents=True, exist_ok=True)
+    snapshot_download(repo_id=repo_id, local_dir=str(path))
+    if not _pretrained_complete(path):
+        raise FileNotFoundError(f"Download of {repo_id} finished but '{path}' is still missing config.json or audiovae weights.")
+    print(f"Downloaded {repo_id} to '{path}'", file=sys.stderr)
+
+
 @argbind.bind(without_prefix=True)
 def train(
     pretrained_path: str,
@@ -92,6 +135,11 @@ def train(
 
     writer = SummaryWriter(log_dir=str(tb_dir)) if accelerator.rank == 0 else None
     tracker = TrainingTracker(writer=writer, log_file=str(save_dir / "train.log"), rank=accelerator.rank)
+
+    # Download the pretrained model if pretrained_path is missing or incomplete
+    if accelerator.rank == 0:
+        ensure_pretrained(pretrained_path, hf_model_id)
+    accelerator.barrier()
 
     # Auto-detect model architecture from config.json
     with open(os.path.join(pretrained_path, "config.json"), "r", encoding="utf-8") as _f:

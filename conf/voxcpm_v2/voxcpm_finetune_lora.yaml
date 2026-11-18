@@ -37,5 +37,6 @@ lora:
 # Distribution options (optional)
 # - If distribute=false (default): save pretrained_path as base_model in lora_config.json
 # - If distribute=true: save hf_model_id as base_model (hf_model_id is required)
-# hf_model_id: "openbmb/VoxCPM2"
+# hf_model_id is also used to auto-download the model when pretrained_path is missing/incomplete
+hf_model_id: "openbmb/VoxCPM2"
 # distribute: true

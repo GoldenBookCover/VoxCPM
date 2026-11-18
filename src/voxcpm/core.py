@@ -91,11 +91,17 @@ class VoxCPM:
         self.text_normalizer = None
         self.denoiser = None
         if enable_denoiser and zipenhancer_model_path is not None:
-            from .zipenhancer import ZipEnhancer
-
-            self.denoiser = ZipEnhancer(zipenhancer_model_path)
-        else:
-            self.denoiser = None
+            try:
+                from .zipenhancer import ZipEnhancer
+            except ImportError:
+                # clearvoice is no longer a required dependency; denoising is skipped without it
+                print(
+                    "Warning: 'clearvoice' is not installed, reference audio denoising is disabled. "
+                    "Install it with `pip install clearvoice` to enable it.",
+                    file=sys.stderr,
+                )
+            else:
+                self.denoiser = ZipEnhancer(zipenhancer_model_path)
         if optimize:
             print("Warm up VoxCPMModel...", file=sys.stderr)
             self.tts_model.generate(
